@@ -21,19 +21,21 @@ OpenCentersOfMass <- function(){
   numEntries <- readBin(centerOfMassFile, "integer", 1, 8, endian="big")
   vectorLength <- readBin(centerOfMassFile, "integer", 1, 8, endian="big")
   
-  splittingIndicies <- vector("integer", numEntries)
+  #splittingIndicies <- vector("integer", numEntries)
   COMweight <- vector("integer", numEntries)
   dataMatrix <- matrix(nrow = 0, ncol = vectorLength)
   
   for (i in 1:numEntries){
-    splittingIndicies[i] <- readBin(centerOfMassFile, "integer", 1, 8, endian="big")
+    #splittingIndicies[i] <- readBin(centerOfMassFile, "integer", 1, 8, endian="big")
     COMweight[i] <- readBin(centerOfMassFile, "integer", 1, 8, endian="big")
     dataMatrix <- rbind(dataMatrix, readBin(centerOfMassFile, "double", vectorLength, 8, endian="big"))
   }
   
   close(centerOfMassFile)
   
-  retList <- list(splittingIndicies, COMweight, dataMatrix)
+  #weightFrame <- data.frame(COMweight, row.names = splittingIndicies)
+  
+  retList <- list(COMweight, dataMatrix)
   return(retList)
 }
 
@@ -43,25 +45,26 @@ OpenMetaGraph <- function(){
   
   graphSize <- readBin(metaGraphFile, "integer", 1, 8, endian="big")
   
-  splittingIndicies <- vector("integer", graphSize)
+  blockNums <- vector("integer", graphSize)
   verticies <- vector("list", graphSize)
   
   for (i in 1:graphSize){
-    splittingIndicies[i] <- readBin(metaGraphFile, "integer", 1, 8, endian="big")
+    blockNums[i] <- readBin(metaGraphFile, "integer", 1, 8, endian="big")
     numEdges <- readBin(metaGraphFile, "integer", 1, 8, endian="big")
     edges <- matrix(nrow = numEdges, ncol = 2)
     for (j in 1:numEdges){
       edges[j,1] <- readBin(metaGraphFile, "integer", 1, 8, endian="big")
-      edges[j,2] <- readBin(metaGraphFile, "integer", 1, 8, endian="big")
+      edges[j,2] <- readBin(metaGraphFile, "double", 1, 8, endian="big")
     }
     verticies[[i]] <- edges
   }
   
   close(metaGraphFile)
-  return(verticies)
+  retList <- list(blockNums, verticies)
+  return(retList)
 }
 
-OpenTrainSplittingIndicies <- function(){
+OpenTrainBlockNumbers <- function(){
   indiciesFile <- file("./BinaryData/MNIST-Fashion-Train-SplittingIndicies.bin", "rb")
   vectorSize <- readBin(indiciesFile, "integer", 1, 8, endian="big")
   trainSplittingIndicies <- readBin(indiciesFile, "integer", vectorSize, 8, endian="big")
@@ -73,5 +76,5 @@ FashionTrainData <- OpenFashionTrain()
 FashionTestData <- OpenFashionTest()
 CentersOfMass <- OpenCentersOfMass()
 MetaGraph <- OpenMetaGraph()
-TrainSplittingIndicies <- OpenTrainSplittingIndicies()
+TrainBlockNumbers <- OpenTrainBlockNumbers()
 
