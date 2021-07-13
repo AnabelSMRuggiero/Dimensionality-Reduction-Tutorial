@@ -1,6 +1,14 @@
 OpenFashionTrain <- function(){
-  fashionTrainFile <- file("./BinaryData/MNIST-Fashion-Train.bin", "rb")
-  fashionData <- readBin(fashionTrainFile, "double", 28*28*60000, 4, endian="big")
+  fashionTrainFile <- file("./BinaryData/MNIST-Train-Images-UInt8.bin", "rb")
+  fashionData <- readBin(fashionTrainFile, "integer", 28*28*60000, 1, signed = FALSE)
+  fashionDataMatrix <- matrix(fashionData, 60000, 28*28, TRUE)
+  close(fashionTrainFile)
+  return(fashionDataMatrix)
+}
+
+OpenFashionTrainFloats <- function(){
+  fashionTrainFile <- file("./BinaryData.old/MNIST-Fashion-Train.bin", "rb")
+  fashionData <- readBin(fashionTrainFile, "double", 28*28*60000, 4, endian = "big")
   fashionDataMatrix <- matrix(fashionData, 60000, 28*28, TRUE)
   close(fashionTrainFile)
   return(fashionDataMatrix)
@@ -72,7 +80,7 @@ OpenTrainBlockNumbers <- function(){
   return(trainSplittingIndicies)
 }
 
-FashionTrainData <- OpenFashionTrain()
+FashionTrainData <- OpenFashionTrainFloats()
 FashionTestData <- OpenFashionTest()
 CentersOfMass <- OpenCentersOfMass()
 MetaGraph <- OpenMetaGraph()
