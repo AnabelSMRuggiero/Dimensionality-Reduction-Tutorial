@@ -30,8 +30,9 @@ svdTime <- system.time(TrainSVD <- svd(FashionTrainData))
 
 
 
-comTranslations <- colMeans(rotatedCOMs)
-for (i in 1:length(rotatedCOMs[[1]])){
-  rotatedCOMs[[1]][i] <- rotatedCOMs[[1]][i] - comTranslations[1]
-  rotatedCOMs[[2]][i] <- rotatedCOMs[[2]][i] - comTranslations[2]
+translatedCOMs <- CentersOfMass[[2]]
+for (i in 1:length(nrow(translatedCOMs))){
+  for (j in 1:length(pca[["center"]])){
+    translatedCOMs[i,j] <- translatedCOMs[i,j] - pca[["center"]][j]
+  }
 }
