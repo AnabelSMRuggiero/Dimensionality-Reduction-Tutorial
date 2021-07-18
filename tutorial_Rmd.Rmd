@@ -1,0 +1,196 @@
+---
+title: "Dimensionality Reduction Tutorial"
+author: "Anabel Ruggiero"
+date: "7/20/2021"
+output: html_document
+---
+
+```{r setup}
+knitr::knit_hooks$set(time_it = local({
+  now <- NULL
+  function(before, options) {
+    if (before) {
+      # record the current time before each chunk
+      now <<- Sys.time()
+    } else {
+      # calculate the time difference after a chunk
+      res <- difftime(Sys.time(), now)
+      # return a character string to show the time
+      paste("Time for this code chunk to run:", res)
+    }
+  }
+}))
+
+knitr::opts_chunk$set(time_it = TRUE)
+```
+
+```{r libraries}
+
+# Check for packages and install if missing 
+if(!require(uwot)){
+    install.packages("uwot", repos = "http://cran.us.r-project.org")
+    library(uwot)
+}
+
+if(!require(ggplot2)){
+    install.packages("ggplot2", repos = "http://cran.us.r-project.org")
+    library(ggplot2)
+}
+```
+
+## Open Data
+
+1. Create train data
+
+```{r, train-data}
+OpenFashionTrain <- function(){
+  fashionTrainFile <- file("./BinaryData/MNIST-Fashion-Train-Uint8.bin", "rb")
+  fashionData <- readBin(fashionTrainFile, "integer", 28*28*60000, 1, signed = FALSE)
+  fashionDataMatrix <- matrix(fashionData, 60000, 28*28, TRUE)
+  close(fashionTrainFile)
+  return(fashionDataMatrix)
+}
+```
+
+2. Create test data
+
+```{r, test-data}
+OpenFashionTest <- function(){
+  fashionTestFile <- file("./BinaryData/MNIST-Fashion-Test.bin", "rb")
+  fashionTestData <- readBin(fashionTestFile, "double", 28*28*10000, 4, endian="big")
+  fashionTestDataMatrix <- matrix(fashionTestData, 10000, 28*28, TRUE)
+  close(fashionTestFile)
+  return(fashionTestDataMatrix)
+}
+```
+
+3. Find centers
+
+```{r, centers}
+OpenCentersOfMass <- function(){
+  centerOfMassFile <- file("./BinaryData/MNIST-Fashion-Train-COMs.bin", "rb")
+  #open(centerOfMassFile)
+  
+  numEntries <- readBin(centerOfMassFile, "integer", 1, 8, endian="big")
+  vectorLength <- readBin(centerOfMassFile, "integer", 1, 8, endian="big")
+  
+  #splittingIndicies <- vector("integer", numEntries)
+  COMweight <- vector("integer", numEntries)
+  dataMatrix <- matrix(nrow = 0, ncol = vectorLength)
+  
+  for (i in 1:numEntries){
+    #splittingIndicies[i] <- readBin(centerOfMassFile, "integer", 1, 8, endian="big")
+    COMweight[i] <- readBin(centerOfMassFile, "integer", 1, 8, endian="big")
+    dataMatrix <- rbind(dataMatrix, readBin(centerOfMassFile, "double", vectorLength, 8, endian="big"))
+  }
+  
+  close(centerOfMassFile)
+  
+  #weightFrame <- data.frame(COMweight, row.names = splittingIndicies)
+  
+  retList <- list(COMweight, dataMatrix)
+  return(retList)
+}
+```
+
+4. Open metagraph
+
+```{r, metagraph}
+OpenMetaGraph <- function(){
+  metaGraphFile <- file("./BinaryData/MNIST-Fashion-Test-MetaGraphEdges.bin", "rb")
+  #open(metaGraphFile)
+  
+  graphSize <- readBin(metaGraphFile, "integer", 1, 8, endian="big")
+  
+  blockNums <- vector("integer", graphSize)
+  verticies <- vector("list", graphSize)
+  
+  for (i in 1:graphSize){
+    blockNums[i] <- readBin(metaGraphFile, "integer", 1, 8, endian="big")
+    numEdges <- readBin(metaGraphFile, "integer", 1, 8, endian="big")
+    edges <- matrix(nrow = numEdges, ncol = 2)
+    for (j in 1:numEdges){
+      edges[j,1] <- readBin(metaGraphFile, "integer", 1, 8, endian="big")
+      edges[j,2] <- readBin(metaGraphFile, "double", 1, 8, endian="big")
+    }
+    verticies[[i]] <- edges
+  }
+  
+  close(metaGraphFile)
+  retList <- list(blockNums, verticies)
+  return(retList)
+}
+```
+
+5. Open train block numbers
+
+```{r, block-num}
+OpenTrainBlockNumbers <- function(){
+  indiciesFile <- file("./BinaryData/MNIST-Fashion-Train-SplittingIndicies.bin", "rb")
+  vectorSize <- readBin(indiciesFile, "integer", 1, 8, endian="big")
+  trainSplittingIndicies <- readBin(indiciesFile, "integer", vectorSize, 8, endian="big")
+  close(indiciesFile)
+  return(trainSplittingIndicies)
+}
+```
+
+6. Rename files
+
+```{r, rename}
+FashionTrainData <- OpenFashionTrain()
+FashionTestData <- OpenFashionTest()
+CentersOfMass <- OpenCentersOfMass()
+MetaGraph <- OpenMetaGraph()
+TrainBlockNumbers <- OpenTrainBlockNumbers()
+```
+
+7. Create plot
+
+```{r, plot}
+embeddingModel <- umap(FashionTrainData, ret_model = TRUE)
+transformedCOMs <- umap_transform(CentersOfMass[[2]], embeddingModel)
+umapFrame <- data.frame(embeddingModel[1])
+COMsFrame <- data.frame(transformedCOMs)
+
+#ggplot(umapFrame, aes(x = X1, y = X2, color = TrainSplittingIndicies)) + geom_point(size = 1, shape = ".") + scale_color_continuous(type = "viridis")
+
+compositePlot <- ggplot() + geom_point(data = umapFrame, aes(x = embedding.1, y = embedding.2, color = TrainBlockNumbers), size = 1, shape = ".") +
+  geom_point(data = COMsFrame, aes(x = X1, y = X2, color = (1:nrow(transformedCOMs))), size = 2) +
+  scale_color_continuous(type = "viridis", guide = guide_colorbar(title = "Block Number"))
+```
+
+## PCA
+
+```{r, PCA}
+pcaTime <- system.time(pca <- prcomp(FashionTrainData, rank = 2))
+pcaFrame <- data.frame(pca[["x"]])
+pcaPlot <- ggplot(pcaFrame, aes(x = PC1, y = PC2, color = TrainBlockNumbers)) + geom_point(size = 1, shape = ".") +
+            scale_color_continuous(type = "viridis")
+print(pcaPlot)
+
+rotatedCOMs <- data.frame(CentersOfMass[[2]] %*% pca[["rotation"]])
+
+compositePlot <- ggplot() + geom_point(data = pcaFrame, aes(x = PC1, y = PC2, color = TrainBlockNumbers), size = 1, shape = ".") +
+  geom_point(data = rotatedCOMs, aes(x = PC1, y = PC2, color = (1:nrow(rotatedCOMs))), size = 2) +
+  scale_color_continuous(type = "viridis", guide = guide_colorbar(title = "Block Number"))
+
+svdTime <- system.time(TrainSVD <- svd(FashionTrainData))
+
+translatedCOMs <- CentersOfMass[[2]]
+for (i in 1:length(nrow(translatedCOMs))){
+  for (j in 1:length(pca[["center"]])){
+    translatedCOMs[i,j] <- translatedCOMs[i,j] - pca[["center"]][j]
+  }
+}
+```
+
+## UMAP
+
+```{r, UMAP}
+umapTime <- system.time(embedding <- umap(FashionTrainData, n_threads = 1))
+umapFrame <- data.frame(embedding)
+umapPlot<- ggplot(umapFrame, aes(x = X1, y = X2, color = TrainBlockNumbers)) +
+             geom_point(size = 1, shape = ".") + scale_color_continuous(type = "viridis")
+
+print(umapPlot)
+```
