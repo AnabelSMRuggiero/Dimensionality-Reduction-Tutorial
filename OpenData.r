@@ -43,6 +43,7 @@ OpenCentersOfMass <- function(){
 
 OpenMetaGraph <- function(){
   metaGraphFile <- file("./BinaryData/MNIST-Fashion-Test-MetaGraphEdges.bin", "rb")
+
   #open(metaGraphFile)
   
   graphSize <- readBin(metaGraphFile, "integer", 1, 8, endian="big")

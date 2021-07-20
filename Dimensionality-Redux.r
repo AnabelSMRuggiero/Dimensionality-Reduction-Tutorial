@@ -1,4 +1,4 @@
-#source("./OpenData.r")
+source("./OpenData.r")
 
 library(ggplot2)
 library(uwot)
