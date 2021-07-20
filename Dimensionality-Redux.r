@@ -2,16 +2,16 @@ source("./OpenData.r")
 
 library(ggplot2)
 library(uwot)
-#prcomp vs princomp
-#prcomp SVD
-#princomp eigen decomp of A^T A
-
 
 embeddingModel <- umap(FashionTrainData, ret_model = TRUE)
 transformedCOMs <- umap_transform(CentersOfMass[[2]], embeddingModel)
 umapFrame <- data.frame(embeddingModel[1])
 COMsFrame <- data.frame(transformedCOMs)
-ggplot(umapFrame, aes(x = X1, y = X2, color = TrainBlockNumbers)) + geom_point(size = 1, shape = ".") + scale_color_continuous(type = "viridis")
+
+fashionPlot <- ggplot(umapFrame, aes(x = embedding.1, y = embedding.2, color = TrainBlockNumbers)) + geom_point(size = 1, shape = ".") + scale_color_continuous(type = "viridis")
+print(fashionPlot)
+
+
 compositePlot <- ggplot() + geom_point(data = umapFrame, aes(x = embedding.1, y = embedding.2, color = TrainBlockNumbers), size = 1, shape = ".") +
   geom_point(data = COMsFrame, aes(x = X1, y = X2, color = (1:nrow(transformedCOMs))), size = 2) +
   scale_color_continuous(type = "viridis", guide = guide_colorbar(title = "Block Number"))
@@ -38,4 +38,3 @@ for (i in 1:length(MetaGraph[[1]])){
   }
 }
 
-print(compositePlot)
