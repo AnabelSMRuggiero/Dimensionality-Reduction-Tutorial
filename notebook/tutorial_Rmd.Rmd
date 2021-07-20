@@ -5,7 +5,7 @@ date: "7/20/2021"
 output: html_document
 ---
 
-```{r setup}
+```{r setup, echo = FALSE}
 knitr::knit_hooks$set(time_it = local({
   now <- NULL
   function(before, options) {
@@ -24,8 +24,7 @@ knitr::knit_hooks$set(time_it = local({
 knitr::opts_chunk$set(time_it = TRUE)
 ```
 
-```{r libraries}
-
+```{r libraries, message = FALSE}
 # Check for packages and install if missing 
 if(!require(uwot)){
     install.packages("uwot", repos = "http://cran.us.r-project.org")
@@ -38,7 +37,7 @@ if(!require(ggplot2)){
 }
 ```
 
-## Open Data
+## OpenData.r
 
 1. Create train data
 
@@ -98,6 +97,7 @@ OpenCentersOfMass <- function(){
 ```{r, metagraph}
 OpenMetaGraph <- function(){
   metaGraphFile <- file("./BinaryData/MNIST-Fashion-Test-MetaGraphEdges.bin", "rb")
+
   #open(metaGraphFile)
   
   graphSize <- readBin(metaGraphFile, "integer", 1, 8, endian="big")
@@ -144,22 +144,9 @@ MetaGraph <- OpenMetaGraph()
 TrainBlockNumbers <- OpenTrainBlockNumbers()
 ```
 
-7. Create plot
+## PCA.r
 
-```{r, plot}
-embeddingModel <- umap(FashionTrainData, ret_model = TRUE)
-transformedCOMs <- umap_transform(CentersOfMass[[2]], embeddingModel)
-umapFrame <- data.frame(embeddingModel[1])
-COMsFrame <- data.frame(transformedCOMs)
-
-#ggplot(umapFrame, aes(x = X1, y = X2, color = TrainSplittingIndicies)) + geom_point(size = 1, shape = ".") + scale_color_continuous(type = "viridis")
-
-compositePlot <- ggplot() + geom_point(data = umapFrame, aes(x = embedding.1, y = embedding.2, color = TrainBlockNumbers), size = 1, shape = ".") +
-  geom_point(data = COMsFrame, aes(x = X1, y = X2, color = (1:nrow(transformedCOMs))), size = 2) +
-  scale_color_continuous(type = "viridis", guide = guide_colorbar(title = "Block Number"))
-```
-
-## PCA
+1. Composite plot
 
 ```{r, PCA}
 pcaTime <- system.time(pca <- prcomp(FashionTrainData, rank = 2))
@@ -175,16 +162,25 @@ compositePlot <- ggplot() + geom_point(data = pcaFrame, aes(x = PC1, y = PC2, co
   scale_color_continuous(type = "viridis", guide = guide_colorbar(title = "Block Number"))
 
 svdTime <- system.time(TrainSVD <- svd(FashionTrainData))
+```
 
+2. Translated plot
+
+```{r}
 translatedCOMs <- CentersOfMass[[2]]
-for (i in 1:length(nrow(translatedCOMs))){
+for (i in 1:nrow(translatedCOMs)){
   for (j in 1:length(pca[["center"]])){
     translatedCOMs[i,j] <- translatedCOMs[i,j] - pca[["center"]][j]
   }
 }
+
+translatedCOMframe <- data.frame(translatedCOMs %*% pca[["rotation"]])
+translatedPlot <- ggplot() + geom_point(data = pcaFrame, aes(x = PC1, y = PC2, color = TrainBlockNumbers), size = 1, shape = ".") +
+  geom_point(data = translatedCOMframe, aes(x = PC1, y = PC2, color = (1:nrow(translatedCOMframe))), size = 2) +
+  scale_color_continuous(type = "viridis", guide = guide_colorbar(title = "Block Number"))
 ```
 
-## UMAP
+## UMAP.r
 
 ```{r, UMAP}
 umapTime <- system.time(embedding <- umap(FashionTrainData, n_threads = 1))
@@ -194,3 +190,4 @@ umapPlot<- ggplot(umapFrame, aes(x = X1, y = X2, color = TrainBlockNumbers)) +
 
 print(umapPlot)
 ```
+
