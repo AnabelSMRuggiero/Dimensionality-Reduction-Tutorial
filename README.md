@@ -4,13 +4,12 @@ Readme courtesy of Isabella Velásquez
 
 ![Dimensionality Reduction Tutorial Image](Dimensionality-Redux-Tutorial.png)
 
-Please join us for a lunchtime R-Ladies meetup with Anabel Ruggiero. Anabel will guide us through a tutorial on dimensionality reduction. Dimensionality reduction is a useful technique for data visualization and as an initial layer of a model. This makes it a powerful tool in a data scientist's arsenal.
+Please join us for an evening R-Ladies meetup with Anabel Ruggiero. Anabel will guide us through a tutorial on dimensionality reduction. Dimensionality reduction is a useful technique for data visualization and as an initial layer of a model. This makes it a powerful tool in a data scientist's arsenal.
 
 Anabel will go over the basics of the math and algorithms behind PCA, tSNE, and UMAP. Most of the time will be devoted to an R example implementing these algorithms.
 
-Anabel Ruggiero is an unaffiliated researcher whose interests lie in the intersection of applied mathematics and software engineering. She received her doctorate in Chemical Engineering at Oklahoma State University, where she did research in the field of computational biosystems. Her current project is NNDescent.cpp, a reimplementation of and iteration upon PyNNDescent. This project is an entry in The Billion-Scale Approximate Nearest Neighbor Search Challenge hosted by NeurIPS 2021.
+Anabel Ruggiero is a computational engineer whose interests lie in the intersection of applied mathematics and software engineering. She received her doctorate in Chemical Engineering at Oklahoma State University, where she conducted research in the field of computational biosystems. Her current research work is NNDescent.cpp, a cache efficient and distributable reimplementation ofs PyNNDescent. In December 2021, she joined Stellar Science as a computational engineer.
 
-- LinkedIn: https://www.linkedin.com/in/anabel-ruggiero-138372114/
 - Github: https://github.com/AnabelSMRuggiero 
 
 -- How to follow Anabel’s tutorial --
